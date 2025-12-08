@@ -1,7 +1,5 @@
 package com.example.labx.ui.screen
 
-// --- TODOS LOS IMPORTS NECESARIOS ---
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -12,16 +10,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +37,7 @@ import com.example.labx.ui.viewmodel.ProductoViewModelFactory
 fun HomeScreen(
     productoRepository: ProductoRepositoryImpl,
     carritoRepository: CarritoRepository,
+    esModoLocal: Boolean = false, // <--- NUEVO: Para saber qué cargar
     onProductoClick: (Int) -> Unit,
     onCarritoClick: () -> Unit,
     onRegistroClick: () -> Unit,
@@ -51,8 +47,21 @@ fun HomeScreen(
     val viewModel: ProductoViewModel = viewModel(
         factory = ProductoViewModelFactory(productoRepository)
     )
+
+    // --- LÓGICA DE CARGA INTELIGENTE ---
+    // Si es modo local, carga BD. Si no, carga API.
+    LaunchedEffect(esModoLocal) {
+        if (esModoLocal) {
+            viewModel.cargarProductosLocales()
+        } else {
+            viewModel.cargarProductos()
+        }
+    }
+    // -----------------------------------
+
     val uiState by viewModel.uiState.collectAsState()
 
+    // Lógica de búsqueda y filtrado
     var textoBusqueda by remember { mutableStateOf("") }
     var categoriaSeleccionada by remember { mutableStateOf<String?>(null) }
 
@@ -67,6 +76,7 @@ fun HomeScreen(
         }
     }
 
+    // Obtener categorías automáticamente
     val categorias = remember(uiState.productos) {
         uiState.productos.map { it.categoria }.distinct().sorted()
     }
@@ -75,8 +85,9 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
+                    // Título dinámico
                     Text(
-                        "Tienda Gamer",
+                        text = if (esModoLocal) "Inventario Local" else "Catálogo Online",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -87,12 +98,22 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onJuegosClick) {
-                        Icon(Icons.Default.Star, contentDescription = "Juegos Gratis", tint = MaterialTheme.colorScheme.primary)
+                    // 1. BOTÓN "GUARDAR TODO" (Solo visible en modo Online)
+                    if (!esModoLocal) {
+                        IconButton(onClick = {
+                            // Llama a la función del ViewModel que creaste en el paso anterior
+                            viewModel.guardarTodoEnLocal()
+                        }) {
+                            // Usamos un icono de flecha hacia abajo (Descarga)
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Descargar Catálogo",
+                                tint = MaterialTheme.colorScheme.primary // Color morado neón
+                            )
+                        }
                     }
-                    IconButton(onClick = onRegistroClick) {
-                        Icon(Icons.Default.Person, contentDescription = "Registro")
-                    }
+
+                    // 2. BOTÓN CARRITO (Siempre visible)
                     IconButton(onClick = onCarritoClick) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito")
                     }
@@ -113,63 +134,93 @@ fun HomeScreen(
         ) {
             when {
                 uiState.estaCargando -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
                 }
                 uiState.error != null -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Error: ${uiState.error}", color = MaterialTheme.colorScheme.error)
-                        Button(onClick = { viewModel.cargarProductos() }) { Text("Reintentar") }
+                        // Mensaje de error personalizado según el modo
+                        Text(
+                            text = if (esModoLocal) "Inventario vacío o error" else "Error de conexión",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                if(esModoLocal) viewModel.cargarProductosLocales()
+                                else viewModel.cargarProductos()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Reintentar")
+                        }
                     }
                 }
                 uiState.productos.isEmpty() -> {
-                    Text("No hay productos disponibles", modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        text = if (esModoLocal) "No has guardado productos aún" else "No hay productos disponibles",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
                 else -> {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Buscador
+                        // Buscador estilo Gamer
                         OutlinedTextField(
                             value = textoBusqueda,
                             onValueChange = { textoBusqueda = it },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            placeholder = { Text("Buscar...") },
+                            placeholder = { Text("Buscar hardware...") },
                             leadingIcon = { Icon(Icons.Default.Search, "") },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                cursorColor = MaterialTheme.colorScheme.secondary
                             ),
-                            singleLine = true
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
                         )
 
-                        // Categorías
+                        // Categorías (Chips)
                         if (categorias.isNotEmpty()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .horizontalScroll(rememberScrollState())
-                                    .padding(horizontal = 16.dp),
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 FilterChip(
                                     selected = categoriaSeleccionada == null,
                                     onClick = { categoriaSeleccionada = null },
-                                    label = { Text("Todos") }
+                                    label = { Text("Todos") },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                        selectedLabelColor = Color.Black
+                                    )
                                 )
                                 categorias.forEach { categoria ->
                                     FilterChip(
                                         selected = categoriaSeleccionada == categoria,
                                         onClick = { categoriaSeleccionada = if (categoriaSeleccionada == categoria) null else categoria },
-                                        label = { Text(categoria) }
+                                        label = { Text(categoria) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                            selectedLabelColor = Color.Black
+                                        )
                                     )
                                 }
                             }
                         }
 
-                        // Lista
+                        // Lista de Productos
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),
@@ -186,6 +237,7 @@ fun HomeScreen(
     }
 }
 
+// La función ProductoCard la dejé igual porque está perfecta
 @Composable
 fun ProductoCard(producto: Producto, onClick: () -> Unit) {
     Card(
@@ -195,8 +247,8 @@ fun ProductoCard(producto: Producto, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        shape = RoundedCornerShape(12.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -206,19 +258,20 @@ fun ProductoCard(producto: Producto, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             val context = LocalContext.current
-            val imageResId = context.resources.getIdentifier(producto.imagenUrl, "drawable", context.packageName)
 
+            // Imagen con borde neón sutil
             Card(
-                shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(if (imageResId != 0) imageResId else producto.imagenUrl)
+                        .data(producto.imagenUrl)
                         .crossfade(true)
+                        .error(android.R.drawable.ic_menu_report_image)
                         .build(),
                     contentDescription = producto.nombre,
-                    modifier = Modifier.size(90.dp),
+                    modifier = Modifier.size(100.dp),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -226,31 +279,47 @@ fun ProductoCard(producto: Producto, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = producto.nombre,
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = producto.categoria.uppercase(),
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = producto.categoria.uppercase(),
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
                     text = producto.precioFormateado(),
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
             Column(horizontalAlignment = Alignment.End) {
                 if (producto.hayStock) {
-                    Surface(color = Color.Green, shape = CircleShape, modifier = Modifier.size(10.dp)) {}
-                    Text("Stock: ${producto.stock}", fontSize = 10.sp, color = Color.Gray)
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = "Disponible",
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 } else {
                     Surface(color = MaterialTheme.colorScheme.error, shape = CircleShape, modifier = Modifier.size(10.dp)) {}
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text("Agotado", fontSize = 10.sp, color = MaterialTheme.colorScheme.error)
                 }
             }

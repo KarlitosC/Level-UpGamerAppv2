@@ -1,5 +1,6 @@
 package com.example.labx.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,15 +9,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -24,11 +29,8 @@ import coil.request.ImageRequest
 import com.example.labx.data.repository.CarritoRepository
 import com.example.labx.domain.model.ItemCarrito
 import kotlinx.coroutines.launch
+import java.util.Date // Import necesario para la fecha de la boleta
 
-/**
- * CarritoScreen: Muestra todos los productos en el carrito
- * Versión Corregida: Usa precios Enteros (Int)
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarritoScreen(
@@ -38,11 +40,13 @@ fun CarritoScreen(
 ) {
     // Observar items del carrito
     val itemsCarrito by carritoRepository.obtenerCarrito().collectAsState(initial = emptyList())
-
-    // CORREGIDO: initial = 0 (Entero) en vez de 0.0 (Decimal)
     val total by carritoRepository.obtenerTotal().collectAsState(initial = 0)
-
     val scope = rememberCoroutineScope()
+
+    // --- ESTADOS PARA LA BOLETA ---
+    var mostrarBoleta by remember { mutableStateOf(false) }
+    var listaComprada by remember { mutableStateOf<List<ItemCarrito>>(emptyList()) }
+    var totalPagado by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -50,58 +54,71 @@ fun CarritoScreen(
                 title = { Text("Mi Carrito (${itemsCarrito.size})") },
                 navigationIcon = {
                     IconButton(onClick = onVolverClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 actions = {
-                    // Botón vaciar carrito
                     if (itemsCarrito.isNotEmpty()) {
                         IconButton(
                             onClick = {
-                                scope.launch {
-                                    carritoRepository.vaciarCarrito()
-                                }
+                                scope.launch { carritoRepository.vaciarCarrito() }
                             }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Vaciar carrito",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                            Icon(Icons.Default.Delete, contentDescription = "Vaciar", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
             )
         },
         bottomBar = {
-            // Barra de total
+            // --- NUEVA BARRA INFERIOR CON BOTÓN DE PAGO ---
             if (itemsCarrito.isNotEmpty()) {
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 8.dp
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 16.dp,
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(20.dp)
                     ) {
-                        Text(
-                            text = "TOTAL:",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            // CORREGIDO: La función ahora acepta Int
-                            text = formatearPrecio(total),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Total a Pagar:", fontSize = 18.sp, color = Color.Gray)
+                            Text(
+                                text = formatearPrecio(total),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                // 1. Guardamos los datos actuales para la boleta
+                                listaComprada = itemsCarrito
+                                totalPagado = total
+
+                                // 2. Vaciamos el carrito y mostramos la alerta
+                                scope.launch {
+                                    carritoRepository.vaciarCarrito()
+                                    mostrarBoleta = true
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("PAGAR AHORA", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -113,27 +130,17 @@ fun CarritoScreen(
                 .padding(paddingValues)
         ) {
             if (itemsCarrito.isEmpty()) {
-                // Carrito vacío
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "🛒",
-                        fontSize = 64.sp
-                    )
+                    Text(text = "🛒", fontSize = 64.sp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Tu carrito está vacío",
-                        fontSize = 18.sp
-                    )
+                    Text(text = "Tu carrito está vacío", fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = onVolverClick) {
-                        Text("Ir a comprar")
-                    }
+                    Button(onClick = onVolverClick) { Text("Ir a comprar") }
                 }
             } else {
-                // Lista de productos
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -144,10 +151,7 @@ fun CarritoScreen(
                             item = item,
                             onCantidadChange = { nuevaCantidad ->
                                 scope.launch {
-                                    carritoRepository.modificarCantidad(
-                                        item.producto.id,
-                                        nuevaCantidad
-                                    )
+                                    carritoRepository.modificarCantidad(item.producto.id, nuevaCantidad)
                                 }
                             },
                             onEliminarClick = {
@@ -159,6 +163,92 @@ fun CarritoScreen(
                         )
                     }
                 }
+            }
+
+            // --- VENTANA EMERGENTE: BOLETA ---
+            if (mostrarBoleta) {
+                AlertDialog(
+                    onDismissRequest = { mostrarBoleta = false },
+                    icon = {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50), // Verde éxito
+                            modifier = Modifier.size(48.dp)
+                        )
+                    },
+                    title = {
+                        Text("¡Compra Exitosa!", textAlign = TextAlign.Center)
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFFFF8E1), RoundedCornerShape(8.dp)) // Fondo tipo papel recibo
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "BOLETA ELECTRÓNICA",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                color = Color.Black
+                            )
+                            Text(
+                                "Fecha: ${Date()}",
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
+
+                            // Lista de items comprados (Scrollable si es muy larga)
+                            LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                                items(listaComprada) { item ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            "${item.cantidad}x ${item.producto.nombre.take(15)}",
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 12.sp,
+                                            color = Color.Black
+                                        )
+                                        Text(
+                                            formatearPrecio(item.subtotal),
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 12.sp,
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
+                            }
+
+                            Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("TOTAL", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = Color.Black)
+                                Text(formatearPrecio(totalPagado), fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = Color.Black)
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { mostrarBoleta = false },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Aceptar")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp
+                )
             }
         }
     }
@@ -184,8 +274,8 @@ fun CarritoItemCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagen del producto
             val context = LocalContext.current
+            // Intentar cargar imagen desde recursos (para productos locales antiguos) o URL
             val imageResId = context.resources.getIdentifier(
                 item.producto.imagenUrl,
                 "drawable",
@@ -204,53 +294,37 @@ fun CarritoItemCard(
                 contentScale = ContentScale.Crop
             )
 
-            // Información y controles
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Nombre
                 Text(
                     text = item.producto.nombre,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-
-                // Precio unitario
                 Text(
                     text = "Precio: ${formatearPrecio(item.producto.precio)}",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Controles de cantidad
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botón Menos (-)
                     IconButton(
-                        onClick = {
-                            if (item.cantidad > 1) {
-                                onCantidadChange(item.cantidad - 1)
-                            }
-                        },
+                        onClick = { if (item.cantidad > 1) onCantidadChange(item.cantidad - 1) },
                         modifier = Modifier.size(32.dp),
                         enabled = item.cantidad > 1
                     ) {
-                        // Nota: Usualmente aquí va un ícono de "Remove" o "Minus",
-                        // pero dejé el que tenías para no alterar el diseño.
                         Icon(
-                            imageVector = Icons.Default.Delete,
+                            Icons.Default.Delete, // O remove si prefieres
                             contentDescription = "Disminuir",
-                            tint = if (item.cantidad > 1)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            tint = if (item.cantidad > 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                         )
                     }
 
-                    // Cantidad actual
                     Text(
                         text = "${item.cantidad}",
                         fontSize = 18.sp,
@@ -260,20 +334,14 @@ fun CarritoItemCard(
                             .wrapContentWidth(Alignment.CenterHorizontally)
                     )
 
-                    // Botón Más (+)
                     IconButton(
                         onClick = { onCantidadChange(item.cantidad + 1) },
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Aumentar",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Icon(Icons.Default.Add, contentDescription = "Aumentar", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
 
-                // Subtotal
                 Text(
                     text = "Subtotal: ${formatearPrecio(item.subtotal)}",
                     fontSize = 16.sp,
@@ -282,22 +350,15 @@ fun CarritoItemCard(
                 )
             }
 
-            // Botón eliminar
             IconButton(onClick = onEliminarClick) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar producto",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
 }
 
-/**
- * Función helper para formatear precio
- * CORREGIDO: Recibe Int en vez de Double
- */
 fun formatearPrecio(precio: Int): String {
-    return "$$${precio.toString().reversed().chunked(3).joinToString(".").reversed()}"
+    val format = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "CL"))
+    format.maximumFractionDigits = 0 // CLP no usa centavos
+    return format.format(precio)
 }

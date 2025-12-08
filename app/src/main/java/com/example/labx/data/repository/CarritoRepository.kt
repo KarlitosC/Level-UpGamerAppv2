@@ -18,7 +18,7 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
         return carritoDao.obtenerTodo()
             .map { entities ->
                 entities.map { entity ->
-                    entity.toItemCarrito() // <--- AQUÍ ESTABA EL ERROR
+                    entity.toItemCarrito()
                 }
             }
     }
@@ -30,7 +30,6 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
             val nuevaCantidad = existente.cantidad + cantidad
             carritoDao.actualizarCantidad(producto.id, nuevaCantidad)
         } else {
-            // CORREGIDO: El precio ahora entra directo como Int
             val entity = CarritoEntity(
                 productoId = producto.id,
                 nombre = producto.nombre,
@@ -66,7 +65,6 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
      * CORREGIDO: Ahora devuelve Int (Entero)
      */
     fun obtenerTotal(): Flow<Int> {
-        // Mapeamos el resultado a Int. Si el DAO devuelve null, retornamos 0
         return carritoDao.obtenerTotal()
             .map { it?.toInt() ?: 0 }
     }

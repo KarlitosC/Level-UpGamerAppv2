@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "labx"
+rootProject.name = "LevelUpGamerAppv2"
 include(":app")
  

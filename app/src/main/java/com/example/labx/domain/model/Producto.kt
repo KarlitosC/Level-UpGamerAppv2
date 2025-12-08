@@ -19,7 +19,9 @@ data class Producto(
 
     fun precioFormateado(): String {
         return try {
-            val format = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
+            // Formato para Pesos (CLP, COP, MXN) -> Sin decimales
+            val format = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "CL"))
+            format.maximumFractionDigits = 0 // Quitamos los centavos
             format.format(precio)
         } catch (e: Exception) {
             "$$precio"

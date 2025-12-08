@@ -4,15 +4,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // Si usas EMULADOR usa 10.0.2.2
-    // Si usas CELULAR FÍSICO usa la IP de tu PC (ej: 192.168.1.X)
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = "https://raw.githubusercontent.com/chalalo1533/ServicioRest/master/"
 
-    val apiService: ProductoApiService by lazy {
-        Retrofit.Builder()
+    val instance: ProductoApiService by lazy {
+        val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(ProductoApiService::class.java)
+
+        retrofit.create(ProductoApiService::class.java)
     }
 }

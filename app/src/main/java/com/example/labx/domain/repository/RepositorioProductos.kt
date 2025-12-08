@@ -16,6 +16,7 @@ interface RepositorioProductos {
      * Se actualiza automáticamente cuando cambia la base de datos
      */
     fun obtenerProductos(): Flow<List<Producto>>
+
     
     /**
      * Obtiene un producto por su ID
@@ -38,6 +39,8 @@ interface RepositorioProductos {
      * Actualiza un producto existente
      */
     suspend fun actualizarProducto(producto: Producto)
+
+    suspend fun obtenerProductosApi(): List<Producto>
     
     /**
      * Elimina un producto específico

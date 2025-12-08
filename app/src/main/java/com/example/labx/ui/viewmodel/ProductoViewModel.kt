@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.labx.data.repository.ProductoRepositoryImpl
+// Si esta línea te da error, borrala y asegúrate de tener la data class definida
+// o defínela aquí abajo como hicimos antes.
 import com.example.labx.ui.state.ProductoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,41 +13,60 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
-
 class ProductoViewModel(
     private val repositorio: ProductoRepositoryImpl
 ) : ViewModel() {
-    
-    // _uiState: privado, solo este ViewModel puede modificarlo
+
     private val _uiState = MutableStateFlow(ProductoUiState())
-    
-    // uiState: público pero solo lectura, las pantallas observan cambios
     val uiState: StateFlow<ProductoUiState> = _uiState.asStateFlow()
-    
-    init {
-        // Cargar productos al crear el ViewModel
-        cargarProductos()
-    }
-    
+
+    // --- CAMBIO 1: ELIMINAMOS EL BLOQUE INIT ---
+    // init {
+    //    cargarProductos()
+    // }
+    // (Lo quitamos para controlar nosotros cuándo cargar)
+
     /**
-     * Carga la lista de productos desde el repositorio
+     * OPCIÓN A: Cargar desde la API (Internet)
+     * Usada cuando entras en "Ver Catálogo Online"
      */
     fun cargarProductos() {
         viewModelScope.launch {
-            // Indicar que está cargando
+            _uiState.value = _uiState.value.copy(estaCargando = true, error = null)
+            try {
+                // Llamamos a la función suspendida de la API (no es Flow)
+                val productosApi = repositorio.obtenerProductosApi()
+
+                _uiState.value = _uiState.value.copy(
+                    estaCargando = false,
+                    productos = productosApi
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    estaCargando = false,
+                    error = "Error API: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * OPCIÓN B: Cargar desde LOCAL (Base de Datos)
+     * Usada cuando entras en "Ver Inventario Local"
+     * (Esta es la función que tenías antes, solo le cambiamos el nombre)
+     */
+    fun cargarProductosLocales() {
+        viewModelScope.launch {
             _uiState.value = _uiState.value.copy(estaCargando = true)
-            
-            // Observar cambios en productos (Flow)
+
             repositorio.obtenerProductos()
                 .catch { exception ->
-                    // Si hay error, actualizar estado
                     _uiState.value = _uiState.value.copy(
                         estaCargando = false,
                         error = exception.message ?: "Error desconocido"
                     )
                 }
                 .collect { productos ->
-                    // Actualizar con los productos obtenidos
                     _uiState.value = _uiState.value.copy(
                         estaCargando = false,
                         productos = productos,
@@ -54,57 +75,40 @@ class ProductoViewModel(
                 }
         }
     }
-    
-    /**
-     * Busca un producto por ID
-     */
+
+    // --- EL RESTO SE QUEDA IGUAL (CRUD) ---
+
     suspend fun obtenerProductoPorId(id: Int) = repositorio.obtenerProductoPorId(id)
-    
-    /**
-     * Agrega un nuevo producto
-     */
+
     fun agregarProducto(producto: com.example.labx.domain.model.Producto) {
-        viewModelScope.launch {
-            repositorio.insertarProducto(producto)
-        }
+        viewModelScope.launch { repositorio.insertarProducto(producto) }
     }
-    
-    /**
-     * Actualiza un producto existente
-     */
+
     fun actualizarProducto(producto: com.example.labx.domain.model.Producto) {
-        viewModelScope.launch {
-            repositorio.actualizarProducto(producto)
-        }
+        viewModelScope.launch { repositorio.actualizarProducto(producto) }
     }
-    
-    /**
-     * Elimina un producto
-     */
+
     fun eliminarProducto(producto: com.example.labx.domain.model.Producto) {
+        viewModelScope.launch { repositorio.eliminarProducto(producto) }
+    }
+    fun guardarTodoEnLocal() {
         viewModelScope.launch {
-            repositorio.eliminarProducto(producto)
+            val productosActuales = _uiState.value.productos
+            if (productosActuales.isNotEmpty()) {
+                // Usamos la función de insertar lista que ya tenías en el repositorio
+                repositorio.insertarProductos(productosActuales)
+            }
         }
     }
 }
 
-/**
- * Factory: Crea instancias del ViewModel con parámetros
- * 
- * ¿Por qué necesitamos esto?
- * - Los ViewModels normalmente no aceptan parámetros en el constructor
- * - El Factory le dice a Android cómo crear el ViewModel con el repositorio
- * 
- * Sin Factory:    ❌ ProductoViewModel() // No funciona, necesita repositorio
- * Con Factory:    ✅ ProductoViewModel(repositorio) // Funciona!
- */
+// Factory (Se queda igual)
 class ProductoViewModelFactory(
     private val repositorio: ProductoRepositoryImpl
 ) : ViewModelProvider.Factory {
-    
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        // Verifica que estamos creando el ViewModel correcto
         if (modelClass.isAssignableFrom(ProductoViewModel::class.java)) {
             return ProductoViewModel(repositorio) as T
         }

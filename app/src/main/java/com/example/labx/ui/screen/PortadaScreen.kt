@@ -1,95 +1,67 @@
 package com.example.labx.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.labx.R
+import com.example.labx.R // Asegúrate de que este R sea el de tu paquete
 
 @Composable
 fun PortadaScreen(
-    onEntrarClick: () -> Unit,
+    onEntrarClick: () -> Unit,      // Ir a la API
+    onLocalClick: () -> Unit,       // Ir al Local (Nueva función)
     onAdminClick: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background) // Fondo oscuro gamer
     ) {
+        // Imagen de fondo (opcional, si tienes una)
+        // Image(...)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Icono grande de tienda
+            // LOGO (Usa tu logo actual)
             Image(
-                painter = painterResource(id = R.drawable.logo_pagina),
-                contentDescription = "Logo",
-                modifier = Modifier.size(120.dp)
+                painter = painterResource(id = R.drawable.logo_pagina), // Tu logo morado
+                contentDescription = "Logo StingCommerce",
+                modifier = Modifier
+                    .size(250.dp)
+                    .padding(bottom = 32.dp),
+                contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "BIENVENIDO A",
+                fontSize = 20.sp,
+                color = Color.Gray,
+                fontWeight = FontWeight.Light
+            )
 
-            // Nombre de la tienda
             Text(
                 text = "LEVEL-UP GAMER",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                fontSize = 32.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(bottom = 48.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Slogan
-            Text(
-                text = "Leveando desde tu celular a tu computadora.",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Descripción
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "🎮 Todo lo que un gamer necesita 🎮 ",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Articulos • Audio • Video\nMonitores • Almacenamiento • Mobiliario",
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Botón principal
             Button(
                 onClick = onEntrarClick,
                 modifier = Modifier
@@ -97,44 +69,28 @@ fun PortadaScreen(
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
-                )
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "TIENDA",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "TIENDA", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Admin
+
             OutlinedButton(
-                onClick = onAdminClick,
+                onClick = onLocalClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(56.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.secondary
+                ),
+                border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Panel Administrador",
-                    fontSize = 16.sp
-                )
+                Text(text = "TIENDA(LOCAL)", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Info adicional
-            Text(
-                text = "Proyecto Educativo MVVM • 2025",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
         }
     }
 }
