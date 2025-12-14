@@ -3,21 +3,6 @@ package com.example.labx.data.local
 import android.content.Context
 import android.content.SharedPreferences
 
-/**
- * PreferenciasManager: Gestiona datos persistentes simples
- * 
- * SharedPreferences:
- * - Almacena pares clave-valor (como un Map)
- * - Persiste entre sesiones de la app
- * - Solo para datos simples (no objetos complejos)
- * 
- * Uso típico:
- * - Sesión de usuario
- * - Configuraciones
- * - Preferencias de UI (tema oscuro, etc.)
- * 
- * Autor: Prof. Sting Adams Parra Silva
- */
 class PreferenciasManager(context: Context) {
     
     // Obtener SharedPreferences del sistema

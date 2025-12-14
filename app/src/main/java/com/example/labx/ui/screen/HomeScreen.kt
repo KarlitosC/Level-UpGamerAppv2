@@ -85,7 +85,6 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Título dinámico
                     Text(
                         text = if (esModoLocal) "Inventario Local" else "Catálogo Online",
                         fontWeight = FontWeight.Bold,
@@ -98,22 +97,21 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    // 1. BOTÓN "GUARDAR TODO" (Solo visible en modo Online)
                     if (!esModoLocal) {
                         IconButton(onClick = {
-                            // Llama a la función del ViewModel que creaste en el paso anterior
+
                             viewModel.guardarTodoEnLocal()
                         }) {
-                            // Usamos un icono de flecha hacia abajo (Descarga)
+
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Descargar Catálogo",
-                                tint = MaterialTheme.colorScheme.primary // Color morado neón
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
 
-                    // 2. BOTÓN CARRITO (Siempre visible)
+
                     IconButton(onClick = onCarritoClick) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito")
                     }
@@ -144,7 +142,6 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Mensaje de error personalizado según el modo
                         Text(
                             text = if (esModoLocal) "Inventario vacío o error" else "Error de conexión",
                             color = MaterialTheme.colorScheme.error
@@ -170,7 +167,6 @@ fun HomeScreen(
                 }
                 else -> {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Buscador estilo Gamer
                         OutlinedTextField(
                             value = textoBusqueda,
                             onValueChange = { textoBusqueda = it },
@@ -220,7 +216,6 @@ fun HomeScreen(
                             }
                         }
 
-                        // Lista de Productos
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),

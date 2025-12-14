@@ -10,7 +10,7 @@ data class ProductoEntity(
     val nombre: String,
     val descripcion: String,
     val precio: Int,
-    val categoria: String, // Campo nuevo para la tienda Gamer
-    val imagenUrl: String, // Campo nuevo para la tienda Gamer
+    val categoria: String,
+    val imagenUrl: String,
     val stock: Int
 )

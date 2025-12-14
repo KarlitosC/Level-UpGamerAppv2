@@ -6,19 +6,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/**
- * ProductoInicializador: Carga productos de ejemplo en la BD
- * 
- * Se ejecuta la primera vez que se abre la app
- * Permite tener datos de prueba sin conectarse a una API
- * 
- * Autor: Prof. Sting Adams Parra Silva
- */
 object ProductoInicializador {
-    
-    /**
-     * Inserta productos de ejemplo si la base de datos está vacía
-     */
+
     fun inicializarProductos(context: Context) {
         val database = AppDatabase.getDatabase(context)
         val productoDao = database.productoDao()

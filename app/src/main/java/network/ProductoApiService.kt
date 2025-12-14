@@ -1,10 +1,9 @@
-package com.example.labx.network
+package network
 
+import com.example.labx.network.ProductoDto
 import retrofit2.http.GET
 
 interface ProductoApiService {
-
-    // Ahora sí reconoce ProductoDto porque son "vecinos" de carpeta
     @GET("productos.json")
     suspend fun obtenerProductos(): List<ProductoDto>
 

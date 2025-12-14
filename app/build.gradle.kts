@@ -41,7 +41,6 @@ android {
 }
 
 dependencies {
-    // --- TUS DEPENDENCIAS ORIGINALES (NO TOCAR) ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -51,24 +50,23 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Room Database
+
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // Navigation Compose
+
     implementation(libs.androidx.navigation.compose)
 
-    // ViewModel Compose
+
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Coil para cargar imágenes (Ya lo tenías, perfecto)
+
     implementation(libs.coil.compose)
 
-    // Accompanist Permissions
     implementation(libs.accompanist.permissions)
 
-    // Testing Básico (Ya lo tenías)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

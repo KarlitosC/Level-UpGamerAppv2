@@ -4,8 +4,7 @@ import com.example.labx.data.local.dao.ProductoDao
 import com.example.labx.data.local.entity.ProductoEntity
 import com.example.labx.domain.model.Producto
 import com.example.labx.domain.repository.RepositorioProductos
-import com.example.labx.network.ProductoDto
-import com.example.labx.network.RetrofitClient
+import network.RetrofitClient
 import com.example.labx.network.toDomain
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -14,21 +13,15 @@ class ProductoRepositoryImpl(
     private val productoDao: ProductoDao
 ) : RepositorioProductos {
 
-    // Instancia de la API (La tomamos directamente del cliente que configuramos antes)
     private val apiService = RetrofitClient.instance
 
-    // --- NUEVA FUNCIÓN: Obtener desde la API (Internet) ---
-    // Esta función va a GitHub, baja el JSON y lo convierte a Producto
-    // En ProductoRepositoryImpl.kt
 
     override suspend fun obtenerProductosApi(): List<Producto> {
-        // ELIMINAMOS EL TRY-CATCH AQUÍ
-        // Dejamos que si falla, el error explote hacia el ViewModel
         val listaDtos = apiService.obtenerProductos()
         return listaDtos.map { dto -> dto.toDomain() }
     }
 
-    // --- EXISTENTE: Obtener desde Local (Base de Datos) ---
+
     override fun obtenerProductos(): Flow<List<Producto>> {
         return productoDao.obtenerTodosLosProductos().map { listaEntidades ->
             listaEntidades.map { entidad ->
@@ -37,7 +30,6 @@ class ProductoRepositoryImpl(
         }
     }
 
-    // 2. INSERTAR (Local)
     override suspend fun insertarProducto(producto: Producto): Long {
         return try {
             productoDao.insertarProducto(producto.toEntity())
@@ -47,7 +39,7 @@ class ProductoRepositoryImpl(
         }
     }
 
-    // 3. ELIMINAR (Local)
+
     override suspend fun eliminarProducto(producto: Producto) {
         productoDao.eliminarProducto(producto.toEntity())
     }

@@ -20,21 +20,10 @@ class ProductoViewModel(
     private val _uiState = MutableStateFlow(ProductoUiState())
     val uiState: StateFlow<ProductoUiState> = _uiState.asStateFlow()
 
-    // --- CAMBIO 1: ELIMINAMOS EL BLOQUE INIT ---
-    // init {
-    //    cargarProductos()
-    // }
-    // (Lo quitamos para controlar nosotros cuándo cargar)
-
-    /**
-     * OPCIÓN A: Cargar desde la API (Internet)
-     * Usada cuando entras en "Ver Catálogo Online"
-     */
     fun cargarProductos() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(estaCargando = true, error = null)
             try {
-                // Llamamos a la función suspendida de la API (no es Flow)
                 val productosApi = repositorio.obtenerProductosApi()
 
                 _uiState.value = _uiState.value.copy(
@@ -49,12 +38,6 @@ class ProductoViewModel(
             }
         }
     }
-
-    /**
-     * OPCIÓN B: Cargar desde LOCAL (Base de Datos)
-     * Usada cuando entras en "Ver Inventario Local"
-     * (Esta es la función que tenías antes, solo le cambiamos el nombre)
-     */
     fun cargarProductosLocales() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(estaCargando = true)
@@ -76,7 +59,7 @@ class ProductoViewModel(
         }
     }
 
-    // --- EL RESTO SE QUEDA IGUAL (CRUD) ---
+
 
     suspend fun obtenerProductoPorId(id: Int) = repositorio.obtenerProductoPorId(id)
 
@@ -102,7 +85,7 @@ class ProductoViewModel(
     }
 }
 
-// Factory (Se queda igual)
+
 class ProductoViewModelFactory(
     private val repositorio: ProductoRepositoryImpl
 ) : ViewModelProvider.Factory {

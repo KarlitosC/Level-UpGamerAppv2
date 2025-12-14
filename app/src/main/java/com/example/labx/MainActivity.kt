@@ -12,15 +12,11 @@ import com.example.labx.data.local.ProductoInicializador
 import com.example.labx.data.repository.CarritoRepository
 import com.example.labx.data.repository.ProductoRepositoryImpl
 import com.example.labx.ui.navigation.NavGraph
-// IMPORTANTE: Importamos el tema que creamos en el paso anterior
 import com.example.labx.ui.theme.LabXTheme
 import com.example.labx.ui.viewmodel.ProductoViewModel
 import com.example.labx.ui.viewmodel.ProductoViewModelFactory
 
-/**
- * MainActivity: Punto de entrada de la aplicación
- * Versión actualizada con Tema Gamer (LabXTheme)
- */
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

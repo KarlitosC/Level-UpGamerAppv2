@@ -9,13 +9,7 @@ import com.example.labx.data.local.dao.ProductoDao
 import com.example.labx.data.local.entity.CarritoEntity
 import com.example.labx.data.local.entity.ProductoEntity
 
-/**
- * Database principal de la app
- * Ahora incluye productos y carrito
- * Singleton para una única instancia en toda la app
- * 
- * Autor: Prof. Sting Adams Parra Silva
- */
+
 @Database(
     entities = [CarritoEntity::class, ProductoEntity::class],
     version = 2, // Incrementado por agregar ProductoEntity

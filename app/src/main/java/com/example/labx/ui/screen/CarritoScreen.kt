@@ -29,7 +29,7 @@ import coil.request.ImageRequest
 import com.example.labx.data.repository.CarritoRepository
 import com.example.labx.domain.model.ItemCarrito
 import kotlinx.coroutines.launch
-import java.util.Date // Import necesario para la fecha de la boleta
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +71,6 @@ fun CarritoScreen(
             )
         },
         bottomBar = {
-            // --- NUEVA BARRA INFERIOR CON BOTÓN DE PAGO ---
             if (itemsCarrito.isNotEmpty()) {
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
@@ -99,15 +98,18 @@ fun CarritoScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // --- AQUÍ ESTABA EL PROBLEMA (YA CORREGIDO) ---
                         Button(
                             onClick = {
-                                // 1. Guardamos los datos actuales para la boleta
-                                listaComprada = itemsCarrito
-                                totalPagado = total
-
-                                // 2. Vaciamos el carrito y mostramos la alerta
                                 scope.launch {
+                                    // 1. GUARDAMOS LA COPIA DE LOS DATOS ANTES DE BORRAR
+                                    listaComprada = itemsCarrito
+                                    totalPagado = total
+
+                                    // 2. AHORA SÍ VACIAMOS EL CARRITO
                                     carritoRepository.vaciarCarrito()
+
+                                    // 3. MOSTRAMOS LA BOLETA CON LOS DATOS GUARDADOS
                                     mostrarBoleta = true
                                 }
                             },
@@ -165,7 +167,6 @@ fun CarritoScreen(
                 }
             }
 
-            // --- VENTANA EMERGENTE: BOLETA ---
             if (mostrarBoleta) {
                 AlertDialog(
                     onDismissRequest = { mostrarBoleta = false },
@@ -173,7 +174,7 @@ fun CarritoScreen(
                         Icon(
                             Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF4CAF50), // Verde éxito
+                            tint = Color(0xFF4CAF50),
                             modifier = Modifier.size(48.dp)
                         )
                     },
@@ -184,7 +185,7 @@ fun CarritoScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(Color(0xFFFFF8E1), RoundedCornerShape(8.dp)) // Fondo tipo papel recibo
+                                .background(Color(0xFFFFF8E1), RoundedCornerShape(8.dp))
                                 .padding(16.dp)
                         ) {
                             Text(
@@ -205,7 +206,7 @@ fun CarritoScreen(
                             )
                             Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
 
-                            // Lista de items comprados (Scrollable si es muy larga)
+                            // Usamos listaComprada en vez de itemsCarrito
                             LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                                 items(listaComprada) { item ->
                                     Row(
@@ -234,6 +235,7 @@ fun CarritoScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text("TOTAL", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = Color.Black)
+                                // Usamos totalPagado en vez de total
                                 Text(formatearPrecio(totalPagado), fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = Color.Black)
                             }
                         }
@@ -275,7 +277,6 @@ fun CarritoItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val context = LocalContext.current
-            // Intentar cargar imagen desde recursos (para productos locales antiguos) o URL
             val imageResId = context.resources.getIdentifier(
                 item.producto.imagenUrl,
                 "drawable",
@@ -319,7 +320,7 @@ fun CarritoItemCard(
                         enabled = item.cantidad > 1
                     ) {
                         Icon(
-                            Icons.Default.Delete, // O remove si prefieres
+                            Icons.Default.Delete,
                             contentDescription = "Disminuir",
                             tint = if (item.cantidad > 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                         )
@@ -359,6 +360,6 @@ fun CarritoItemCard(
 
 fun formatearPrecio(precio: Int): String {
     val format = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "CL"))
-    format.maximumFractionDigits = 0 // CLP no usa centavos
+    format.maximumFractionDigits = 0
     return format.format(precio)
 }
